@@ -82,7 +82,7 @@ type ControllerTestSuite struct {
 	reportMgr       *reporttesting.Manager
 	ar              artifact.Controller
 	c               *basicController
-	reportConverter *postprocessorstesting.ScanReportV1ToV2Converter
+	reportConverter *postprocessorstesting.NativeScanReportConverter
 	cache           *mockcache.Cache
 }
 
@@ -235,6 +235,7 @@ func (suite *ControllerTestSuite) SetupSuite() {
 			Description: "for scan",
 			ProjectID:   suite.artifact.ProjectID,
 			Duration:    -1,
+			Creator:     "harbor-core-for-scan-all",
 		},
 		Level: robot.LEVELPROJECT,
 		Permissions: []*robot.Permission{
@@ -266,6 +267,7 @@ func (suite *ControllerTestSuite) SetupSuite() {
 			Description: "for scan",
 			ProjectID:   suite.artifact.ProjectID,
 			Duration:    -1,
+			Creator:     "harbor-core-for-scan-all",
 		},
 		Level: "project",
 	}, nil)
@@ -339,7 +341,7 @@ func (suite *ControllerTestSuite) SetupSuite() {
 
 		execMgr:         suite.execMgr,
 		taskMgr:         suite.taskMgr,
-		reportConverter: &postprocessorstesting.ScanReportV1ToV2Converter{},
+		reportConverter: &postprocessorstesting.NativeScanReportConverter{},
 		cache:           func() cache.Cache { return suite.cache },
 	}
 	mock.OnAnything(suite.scanHandler, "JobVendorType").Return("IMAGE_SCAN")
@@ -486,6 +488,7 @@ func (suite *ControllerTestSuite) TestScanControllerGetReport() {
 		{ExtraAttrs: suite.makeExtraAttrs(int64(1), "rp-uuid-001")},
 	}, nil).Once()
 	mock.OnAnything(suite.accessoryMgr, "List").Return(nil, nil)
+	mock.OnAnything(suite.c.reportConverter, "FromRelationalSchema").Return("", nil)
 	rep, err := suite.c.GetReport(ctx, suite.artifact, []string{v1.MimeTypeNativeReport})
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 1, len(rep))
